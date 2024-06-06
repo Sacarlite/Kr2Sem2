@@ -1,0 +1,94 @@
+#include "FileOutput.h"//Подключение HeaderFile с выводом данных в фаил
+#include <fstream>//Библиотека ввода и вывода из фаила
+#include <iostream>//Библиотека ввода и вывода
+#include "Checks.h"//Подключение HeaderFile с обработкой ошибок пользовательского ввода
+#include "MainMenu.h"//Подключение HeaderFile с Enum menu
+#include "PersonalInterface.h"//Подключение HeaderFile с пользовательским интерфейсом
+#include <filesystem>//Подключение библеотеки для проверки состояния фаила
+class FileWriteException//Пользовательский класс ошибок фаилового взаимодействия
+{
+public:
+	FileWriteException(std::string message) : message{ message } {}//Конструктор класса 
+	std::string getMessage() const { return message; }//Возврат сообщение об ошибки
+private:
+	std::string message;//Поле хранящее сообщение об ошибке
+};
+void WriteHerbivores(std::vector<Herbivores> herbivores,std::string fileName)//Функция записи данных квартир в фаил
+{
+	std::ofstream  out;//Создания потока записи в фаил
+	out.exceptions(std::ofstream::badbit | std::ofstream::failbit);//Установка побитовых флагов ошибок фаилового взаимодействия
+	try {
+		out.open(fileName);//открытие фаила для записи
+		//Запись данных
+		out << herbivores.size() << std::endl;//Запись кол-ва объектов в векторе
+		for (auto i = herbivores.begin(); i < herbivores.end(); ++i)//Перебор вектора квартир при помощи итератора
+		{
+			out << i->GetFullInformation() << std::endl;//Запись в файл адреса (достаём функцию по указателю, записываем в файл)
+		}
+		out.close();//закрытия потока
+		std::cout << "Данные успешно сохранены." << std::endl;
+	}
+	catch(const std::exception&)//Обработка ошибки
+	{
+		throw FileWriteException("Невозможно записать данные в файл. Повторите попытку.");//Выброс пользовательской ошибки фаилового вывода
+	}
+}
+
+
+void FileOutput(std::vector<Herbivores> herbivores)
+{
+	std::ifstream out2;//Создания потока чтения из файла
+	std::string fileName;//Переменная имени или пути файла
+	out2.exceptions(std::ifstream::badbit | std::ifstream::failbit);//Установка побитовых флагов ошибок фаилового взаимодействия
+	int userChoice = 0;//Переменная пользовательского ввода
+
+	while (true) {
+		std::cout << "Введите имя фаила (в разрешении .txt): ";
+		std::cin >> fileName;//Ввод пути к файлу
+		try {
+			if(fileName.find(".txt") == std::string::npos )//Поиск в имени фаила части .txt если указатель не указывает на элемент строки происходит повторный запрос
+			{
+				std::cout << "Не верное разрешение у файла или файл не существует. Повторитие попытку. "<<std::endl;
+				continue;
+			}
+			try
+			{
+				if (std::filesystem::is_regular_file(fileName)) {//Проверка на системные фаилы
+					std::cout << "Файл с таким именем уже существует." << std::endl;
+				}
+
+			}
+			catch (const std::exception&)
+			{
+				throw FileWriteException("Невозможно записать данные в файл. Повторите попытку.");//Выброс пользовательской ошибки фаилового вывода
+
+			}
+			out2.open(fileName);//Попытка открытия файла
+			ShowOutputChoise();//Функция вывода на консоль выбора файла
+			userChoice = GetChoise();//Ввод пользовательского выбора
+			if (userChoice == Yes) {
+				
+				out2.close();//Закрытия потока чтения из файла
+				WriteHerbivores(herbivores, fileName);//Функция записи в файл
+			}
+			else {
+				out2.close();//Закрытия потока чтения из фаила
+				continue;
+			}
+			break;
+		}
+		catch (const std::exception&) {
+			try {
+				WriteHerbivores(herbivores, fileName);//Функция записи в файл
+				break;
+			}
+			catch ( FileWriteException err) {//Обработка ошибки взаимодействия с файлом
+				std::cout << err.getMessage() << std::endl;//Вывод сообщения об ошибки
+			}
+		}
+		catch (FileWriteException err) {//Обработка ошибки взаимодействия с фаилом
+			std::cout << err.getMessage() << std::endl;//Вывод сообщения об ошибки
+		}
+
+	}
+}
