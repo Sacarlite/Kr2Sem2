@@ -7,5 +7,6 @@ enum menu
 	FileInput = 1,//Файловый ввод
 	ConsoleInput = 2,//Консольный ввод
 	Yes = 1,//Пункт да
+	No = 2,//Пункт нет
 	Exit = 4
 };
